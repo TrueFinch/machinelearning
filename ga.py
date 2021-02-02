@@ -14,11 +14,11 @@ is_cont = True
 class GA:
     MAX_STEP = 1000
     POP_SIZE = 10000
-    SEL_SIZE = 100
+    SEL_SIZE = 200
     MIN_MUTATIONS_NUMBER = 20
     MAX_MUTATIONS_NUMBER = 50
-    MAX_PERSONAL_MUTATIONS_NUMBER = 20
-    K_POINT = 50
+    MAX_PERSONAL_MUTATIONS_NUMBER = 25
+    K_POINT = 25
 
     def __init__(self, task_comp: np.ndarray, task_time: np.ndarray, devs_coef: np.array):
         self.task_comp = task_comp
@@ -98,8 +98,8 @@ class GA:
             self.best_time = self.fitness_cache[loc_best_time_index]
             self.best_member = self.population[np.argmin(self.fitness_cache)]
         print(f"Epoch: {self.epoch}", end="\t")
-        print(f"local_best_time={self.fitness_cache[loc_best_time_index]}", end="\t")
-        print(f"best_time={self.best_time}")
+        print(f"best_time={self.best_time:.3f}", end="\t")
+        print(f"local_best_time={self.fitness_cache[loc_best_time_index]:.3f}")
         # print(f"unique members={len(np.unique([tuple(row) for row in self.population], axis=1))}")
         # print(f"Best member: {self.population[np.argmin(self.fitness_cache)]}")
         next_population = np.array([self.crossover(*self.selection()) for _ in range(self.POP_SIZE // 2)])
