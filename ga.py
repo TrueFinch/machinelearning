@@ -10,11 +10,13 @@ output_path = "output.txt"
 
 
 class GA:
-    MAX_STEP = 200
+    MAX_STEP = 1000
     POP_SIZE = 500
-    SEL_SIZE = 500
+    SEL_SIZE = 50
+    MIN_MUTATIONS_NUMBER = 100
     MAX_MUTATIONS_NUMBER = 500
-    K_POINT = 2
+    MAX_PERSONAL_MUTATIONS_NUMBER = 100
+    K_POINT = 50
 
     def __init__(self, task_comp: np.ndarray, task_time: np.ndarray, devs_coef: np.array):
         self.task_comp = task_comp
@@ -37,12 +39,16 @@ class GA:
         self.population = np.array([np.random.randint(low=1, high=len(self.devs_coef) + 1, size=len(self.task_comp))
                                     for _ in range(self.POP_SIZE)])
         # print("start population:", self.population)
+        pass
 
     def fitness(self, member):
         return self.calculateMaxDevTime(member)
 
     def selection(self):
-        candidates_indecies = np.random.randint(low=0, high=self.POP_SIZE, size=np.min([self.SEL_SIZE, self.POP_SIZE]))
+        candidates_indecies = np.random.choice(np.arange(0, self.POP_SIZE),
+                                               replace=False,
+                                               size=np.min([self.SEL_SIZE, self.POP_SIZE]))
+        # candidates_indecies = np.random.randint(low=0, high=self.POP_SIZE, size=np.min([self.SEL_SIZE, self.POP_SIZE]))
 
         candidates_time = np.zeros((len(candidates_indecies), len(self.population[0]) + 1), dtype="object")
         candidates_time[:, :-1] = self.population[candidates_indecies]
@@ -68,8 +74,8 @@ class GA:
 
     def mutation(self, member):
         # print(f"Before mutation: {member}")
-        index = np.random.randint(low=0, high=len(member))
-        mutation = np.random.randint(low=1, high=len(self.devs_coef) + 1)
+        index = np.random.randint(low=0, high=len(member), size=self.MAX_PERSONAL_MUTATIONS_NUMBER)
+        mutation = np.random.randint(low=1, high=len(self.devs_coef) + 1, size=len(index))
         member[index] = mutation
         # print(f"After mutation: {member}")
         return member
@@ -93,16 +99,22 @@ class GA:
         if self.fitness_cache[loc_best_time_index] < self.best_time:
             self.best_time = self.fitness_cache[loc_best_time_index]
             self.best_member = self.population[np.argmin(self.fitness_cache)]
-        print(f"Epoch: {self.epoch}, best_time={self.best_time}")
+        print(f"Epoch: {self.epoch}", end="\t")
+        print(f"best_time={self.best_time}")
+        # print(f"unique members={len(np.unique([tuple(row) for row in self.population], axis=1))}")
         # print(f"Best member: {self.population[np.argmin(self.fitness_cache)]}")
         next_population = np.array([self.crossover(*self.selection())[0] for _ in range(self.POP_SIZE)])
 
         members_to_mutate = np.random.randint(low=0, high=self.POP_SIZE,
-                                              size=np.random.randint(low=0, high=self.MAX_MUTATIONS_NUMBER))
+                                              size=np.random.randint(low=self.MIN_MUTATIONS_NUMBER,
+                                                                     high=self.MAX_MUTATIONS_NUMBER))
         if len(members_to_mutate) != 0:
             for index in members_to_mutate:
+                # print(f"Before mutation: {next_population[index]}")
                 next_population[index] = self.mutation(next_population[index])
+                # print(f"After mutation: {next_population[index]}")
         self.population = next_population
+        pass
 
 
 if __name__ == "__main__":
