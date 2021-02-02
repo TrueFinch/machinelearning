@@ -134,7 +134,7 @@ if __name__ == "__main__":
         stop = True
 
 
-    keyboard.on_press_key("q", stop_func)
+    keyboard.on_press_key("`", stop_func)
     for i in range(ga.MAX_STEP):
         ga.step()
         times.append(ga.best_time)
