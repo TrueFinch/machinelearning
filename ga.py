@@ -2,16 +2,19 @@ import numpy as np
 import deap
 import sys
 import matplotlib.pyplot as plt
-
+import keyboard
 from m1 import *
+
+last_try_path = "last_try.txt"
+output_path = "output.txt"
 
 
 class GA:
-    MAX_STEP = 1000
-    POP_SIZE = 100
-    SEL_SIZE = 50
-    MAX_MUTATIONS_NUMBER = 10
-    K_POINT = 100
+    MAX_STEP = 200
+    POP_SIZE = 500
+    SEL_SIZE = 500
+    MAX_MUTATIONS_NUMBER = 500
+    K_POINT = 2
 
     def __init__(self, task_comp: np.ndarray, task_time: np.ndarray, devs_coef: np.array):
         self.task_comp = task_comp
@@ -23,7 +26,14 @@ class GA:
         self.best_time = float("inf")
         self.best_member = np.array([])
 
-    def initialize(self):
+    def initialize(self, is_continue: bool = False):
+        if is_continue:
+            print("Continue last try")
+            with open(last_try_path, "r") as fin:
+                lines = list(map(lambda line: line.strip().split(), fin.readlines()))
+                lines = list(map(lambda row: list(map(int, row)), lines))
+                self.population = np.array(lines)
+            return
         self.population = np.array([np.random.randint(low=1, high=len(self.devs_coef) + 1, size=len(self.task_comp))
                                     for _ in range(self.POP_SIZE)])
         # print("start population:", self.population)
@@ -103,12 +113,29 @@ if __name__ == "__main__":
     m = int(input())
     coef = np.array(list(map(lambda line: list(map(float, line.strip().split())), sys.stdin.readlines())))
     ga = GA(comp, time, coef)
-    ga.initialize()
+    is_cont = True
+    ga.initialize(is_cont)
     times = []
+    stop = False
+
+
+    def stop_func(a):
+        global stop
+        stop = True
+
+
+    keyboard.on_press_key("q", stop_func)
     for i in range(ga.MAX_STEP):
         ga.step()
         times.append(ga.best_time)
-
-    print(f"Best member: {ga.best_member}")
-    # print(f"Score: {(1e6 / ga.best_time * ga.best_time)}")
+        if stop:
+            with open(last_try_path, "w") as fout:
+                fout.write("\n".join([" ".join(list(map(str, member))) for member in ga.population]))
+                fout.close()
+            break
+    with open(output_path, "w") as fout:
+        fout.write(" ".join(list(map(str, ga.best_member))))
+        fout.close()
+    # print(f"Best member: {ga.best_member}")
+    print(f"Score: {(1e5 / ga.best_time * 10.1216128)}")
     # print(ga.calculateMaxDevTime(np.array([1, 1, 1]))) # test
