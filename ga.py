@@ -8,14 +8,16 @@ from m1 import *
 last_try_path = "last_try.txt"
 output_path = "output.txt"
 
+is_cont = True
+
 
 class GA:
     MAX_STEP = 1000
-    POP_SIZE = 500
-    SEL_SIZE = 50
-    MIN_MUTATIONS_NUMBER = 100
-    MAX_MUTATIONS_NUMBER = 500
-    MAX_PERSONAL_MUTATIONS_NUMBER = 100
+    POP_SIZE = 10000
+    SEL_SIZE = 100
+    MIN_MUTATIONS_NUMBER = 20
+    MAX_MUTATIONS_NUMBER = 50
+    MAX_PERSONAL_MUTATIONS_NUMBER = 20
     K_POINT = 50
 
     def __init__(self, task_comp: np.ndarray, task_time: np.ndarray, devs_coef: np.array):
@@ -53,10 +55,7 @@ class GA:
         candidates_time = np.zeros((len(candidates_indecies), len(self.population[0]) + 1), dtype="object")
         candidates_time[:, :-1] = self.population[candidates_indecies]
         candidates_time[:, -1] = self.fitness_cache[candidates_indecies]
-        # print(candidates_time)
         sorted_candidates_time = candidates_time[candidates_time[:, -1].argsort()]
-        # print(sorted_candidates_time)
-        # print(sorted_candidates_time[:, :-1][:2])
 
         return sorted_candidates_time[:, :-1][:2]
 
@@ -82,14 +81,13 @@ class GA:
 
     def calculateMaxDevTime(self, member):
         t_max = -float("inf")
-        for dev in range(1, len(self.devs_coef) + 1):
-            if dev in member:
-                indices = np.where(member == dev)[0]
-                # print(member)
-                # print(indices)
-                # print(self.task_time[indices])
-                t_max = np.max([t_max, np.dot(self.task_time[indices],
-                                              self.devs_coef[dev - 1][self.task_comp[indices] - 1])])
+        for dev in np.unique(member):
+            indices = np.where(member == dev)[0]
+            # print(member)
+            # print(indices)
+            # print(self.task_time[indices])
+            t_max = np.max([t_max, np.dot(self.task_time[indices],
+                                          self.devs_coef[dev - 1][self.task_comp[indices] - 1])])
         return t_max
 
     def step(self):
@@ -100,11 +98,12 @@ class GA:
             self.best_time = self.fitness_cache[loc_best_time_index]
             self.best_member = self.population[np.argmin(self.fitness_cache)]
         print(f"Epoch: {self.epoch}", end="\t")
+        print(f"local_best_time={self.fitness_cache[loc_best_time_index]}", end="\t")
         print(f"best_time={self.best_time}")
         # print(f"unique members={len(np.unique([tuple(row) for row in self.population], axis=1))}")
         # print(f"Best member: {self.population[np.argmin(self.fitness_cache)]}")
-        next_population = np.array([self.crossover(*self.selection())[0] for _ in range(self.POP_SIZE)])
-
+        next_population = np.array([self.crossover(*self.selection()) for _ in range(self.POP_SIZE // 2)])
+        next_population = next_population.reshape((self.POP_SIZE, 1000))
         members_to_mutate = np.random.randint(low=0, high=self.POP_SIZE,
                                               size=np.random.randint(low=self.MIN_MUTATIONS_NUMBER,
                                                                      high=self.MAX_MUTATIONS_NUMBER))
@@ -125,7 +124,6 @@ if __name__ == "__main__":
     m = int(input())
     coef = np.array(list(map(lambda line: list(map(float, line.strip().split())), sys.stdin.readlines())))
     ga = GA(comp, time, coef)
-    is_cont = True
     ga.initialize(is_cont)
     times = []
     stop = False
